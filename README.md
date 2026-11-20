@@ -54,7 +54,7 @@ node $S/pdf_read.mjs 题目.pdf
 
 ```bash
 # 克隆到 Claude Code 的 skills 目录
-git clone https://github.com/wzx666-source/claude-skill-dsv4-Qwen3.8-.git ~/.claude/skills/qwen-dual-model
+git clone https://github.com/wzx666-source/claude-skill-dsv4-Qwen4-.git ~/.claude/skills/qwen-dual-model
 
 # 姊妹 skill model-switch(什么时候切 Claude / 用 GPT)是**独立仓库**,单独克隆:
 git clone https://github.com/wzx666-source/Claude-Claude-gpt-.git ~/.claude/skills/model-switch

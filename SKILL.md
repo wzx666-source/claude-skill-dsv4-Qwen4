@@ -109,17 +109,18 @@ allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 → Qwen 在视觉维度领先(见上表 MathVision 95.2),故**「视觉固定走 Qwen」的结论不变**——现在是有数可依,不再只是"口径统一"。
 Flash 的 BabyVision 89.6 也够用,这正是"Qwen 挂了就放行原生 Read"这条退路成立的量化理由。
 
-### 背景细节(不参与路由推导,2026-09 快照)
+### 背景细节(不参与路由推导,2026-09 快照;Qwen 侧为**上代** Qwen3.8-Max)
 
-以下跑分**不进 roster、不影响档位推导**,只作背景参考——所以过期了也不影响正确性:
+以下跑分**不进 roster、不影响档位推导**,只作背景参考——所以过期了也不影响正确性。
+**Qwen4-Max 的背景跑分尚未收集**,在补上之前下列 Qwen 数字只代表上代:
 
-- **Qwen3.8-Max**:LogicVista 91.9、Vision Arena 1301 Elo(第 2)、BabyVision 93.8、ERQA 78.3、
+- **Qwen3.8-Max(上代)**:LogicVista 91.9、Vision Arena 1301 Elo(第 2)、BabyVision 93.8、ERQA 78.3、
   OSWorld-Verified 86.1、TerminalBench-2.1 86.6、QwenSWEBench V2 70.0、CoWorkBench 76.1、
   JobBench 64.0、GDPval-AA 1739 Elo、`CodeArena(WebDev) 1691 号称全球第一`
   ⚠️ 最后这条是**单一榜单口径,证据最弱** —— 原先据此把「纯前端长程项目」列为开 Qwen 会话的情形,**现已废弃**(改按全局 `CLAUDE.md` 判据切 Claude)
 - **DeepSeek V4.1-Flash**:Terminal-Bench 2.1 90.6、Terminal-Bench 3.0/4.0 30.0/31.2、NL2Repo 65.4、
   CyberGym 88.1、MathArena Apex 65.6、Chartography 78.9、ZeroBench-main 49.0
-- **第三方独立可比**(Artificial Analysis):V4.1-Flash 指数 40 / 约 $0.27 每任务;Qwen3.8-Max 指数 53→56 / 约 $1.14 每任务
+- **第三方独立可比**(Artificial Analysis):V4.1-Flash 指数 40 / 约 $0.27 每任务;Qwen3.8-Max(上代)指数 53→56 / 约 $1.14 每任务(Qwen4 未核实)
 
 > **别名存疑(已实测)**:有厂商口径称 2026-09-14 起 V4-Pro 请求被重定向至 V4.1-Flash。
 > 本机 2026-09-28 用 `self_test.mjs` 的「溯源探针」读响应体回显的 model id 实测:
@@ -393,17 +394,16 @@ node <skill>/scripts/show_calls.mjs --cost     # 按 厂商/模型 汇总 token 
 
 ## 成本与轮次(决定"值不值得开 Qwen 会话")
 
-| | Qwen3.8-Max | DeepSeek V4.1-Flash |
+| | Qwen4-Max | DeepSeek V4.1-Flash |
 |---|---|---|
-| 输出价 | $6 / M | $0.60 / M(**1/10**) |
-| 输入价 | $2 / M | $0.15 / M(离峰) |
-| 每任务成本(AA 实测) | ~$1.14 | ~$0.27 |
-| 每任务轮次(AA 实测) | ~64 轮(上代 14 轮) | — |
+| 输出价 | **待核实** | $0.60 / M |
+| 输入价 | **待核实** | $0.15 / M(离峰) |
+| 每任务成本 | **待核实** | ~$0.27(AA 实测) |
 
-Artificial Analysis 实测 Qwen3.8-Max 每任务约 **64 轮 vs 上代 14 轮**、输入 token 涨约 15 倍,每任务成本 $0.53 → $1.14。
+> Qwen4-Max 的官方价格与每任务成本尚未核实,故不填(旧版 Qwen3.8-Max 的数字随模型下线作废,不能再当依据)。
+> 在补上之前,用 `show_calls.mjs --cost` 按实际调用量估算,**不要沿用旧表的 10 倍价差结论**。
 
-→ **长程 agent 任务不要放进 Qwen 会话**:输出价差 10 倍 × 轮次膨胀,长会话账单会很可观。
-→ Qwen 会话留给**短程高价值视觉任务**(精读、复核、扫描件)—— 这也是"只在两种情况开 Qwen 会话"那条限定成立的量化理由。
+→ 价格核实前,长程 agent 任务按更保守的口径处理:**Qwen 会话只留给短程高价值视觉任务**(精读、复核、扫描件)。
 
 ### 怎么量(2026-10-23 起)
 
@@ -428,8 +428,8 @@ node <skill>/scripts/show_calls.mjs 20         # 逐条看:输入/输出 token�
 
 ## 已知风险:Qwen 的幻觉率
 
-Artificial Analysis 的 AA-Omniscience 实测:Qwen3.8-Max 幻觉率 **23% → 40%**(上代 3.7-Max 为 23%),
-"回答不知道"的次数近乎腰斩。**跑分涨了 ≠ 审得准了**——这两件事是同一枚硬币的两面(更长的推理链 = 更多机会自信地答错)。
+AA-Omniscience 对**上代 Qwen3.8-Max** 的实测是幻觉率 **23% → 40%**;"回答不知道"的次数近乎腰斩。
+**Qwen4-Max 的幻觉率尚无核实数据** —— 在补上之前按同样的警戒线执行:跑分涨了 ≠ 审得准了。
 
 **适用边界**(分析师给的判据,直接决定我们用不用它):
 
