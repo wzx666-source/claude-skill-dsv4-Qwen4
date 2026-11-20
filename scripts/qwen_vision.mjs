@@ -6,7 +6,7 @@
 //   手写: node qwen_vision.mjs photos/note.jpg "把手写推导逐行转成 LaTeX"
 // 多图一次传入(最多 6 张),Qwen 按顺序编号为图1..图N。
 // 选项:
-//   --think           开启思考链(默认**关闭**;qwen3.8-max 思考模式下视觉调用会多花 60–240s)
+//   --think           开启思考链(默认**关闭**;qwen4-max 思考模式下视觉调用明显变慢)
 //   --max-tokens N    输出上限,默认 4096
 //   --no-cache        跳过视觉缓存(默认按"图片内容+问题"命中缓存)
 import path from 'node:path';
@@ -61,8 +61,8 @@ try {
   } else {
     try {
       const answer = await callQwen([{ role: 'user', content }], {
-        // 关键:视觉任务默认关闭思考链。qwen3.8-max 思考模式下单次 60–240s,
-        // 关闭后同一张图约 2s —— 实测差异来自 3000–9500 个 reasoning token。
+        // 关键:视觉任务默认关闭思考链。2026-11-19 实测 qwen4-max 关思考时 2.7s;
+        // 保持关闭(OCR/排版检查不需要推理)。
         enableThinking: think,
         maxTokens,
       });

@@ -40,7 +40,7 @@ cp <skill>/templates/CLAUDE.md CLAUDE.md && cat <skill>/templates/CLAUDE.competi
 5. 让它把结果存到 bridge/to_ds/<名字>.md
 6. 回到本会话跟我说「读 bridge/to_ds/<名字>.md」,我接着干
 ```
-> 该 Qwen 会话里的 `qwen_review` / `qwen_ask` 会自动改由 DeepSeek 承担(评审角色翻转),两边都不会自审自。
+> 按「启用条件」,Qwen 会话默认不启用本协议;若用户明确点名手动跑 `qwen_review` / `qwen_ask`,才会自动改由 DeepSeek 承担(评审角色翻转),两边都不会自审自。
 > **不要为了"随手问一句"开 Qwen 会话**——单次提问用 `qwen_ask`。
 
 ## 阶段映射(配合 mathmodel-skill)
@@ -64,9 +64,9 @@ cp <skill>/templates/CLAUDE.md CLAUDE.md && cat <skill>/templates/CLAUDE.competi
 
 竞赛要求提交 AI 使用声明,声明内容**必须与实际工具集相符**:
 
-- 声明里若写"通义千问(百炼)qwen3.8-max 用于题目附件图像识别",而实际某次由
+- 声明里若写"通义千问(百炼)qwen4-max 用于题目附件图像识别",而实际某次由
   DeepSeek 原生视觉读了图(hook fail-open 放行,或手动 `Read`),**声明就不准确**
-- 同理,**评审/咨询**也跨厂商调用:本会话 DeepSeek 时评审走 Qwen;双开 Qwen 会话时评审走 DeepSeek,
+- 同理,**评审/咨询**也跨厂商调用:本会话 DeepSeek 时评审走 Qwen;双开 Qwen 会话里若用户明确点名手动调用,评审走 DeepSeek,
   且 DeepSeek 侧按 mode 分档(具体档位见文末版本戳)。声明若要列"用于评审的模型",按实际用过的那几档写,别只写一个
 - 赛前对一遍 `mathmodel-skill/references/2026_ai_regulation.md` 里的工具清单
 - 稳妥做法:全程按协议走 Qwen 视觉;若用过原生视觉,把 DeepSeek 一并写进声明
@@ -74,5 +74,5 @@ cp <skill>/templates/CLAUDE.md CLAUDE.md && cat <skill>/templates/CLAUDE.competi
 ---
 
 <!-- ROSTER:roster-stamp:begin -->
-> 档位依据:`model_roster.json` @ 2026-09-28(复核期限 2026-10-31)。若此戳早于 skill 内的 roster 版本,说明本项目这份协议已过期,请重新拷贝模板。
+> 档位依据:`model_roster.json` @ 2026-11-19(复核期限 2026-12-31)。若此戳早于 skill 内的 roster 版本,说明本项目这份协议已过期,请重新拷贝模板。
 <!-- ROSTER:roster-stamp:end -->

@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-28",
-  "recheckBy": "2026-10-31",
+  "updatedAt": "2026-11-19",
+  "recheckBy": "2026-12-31",
   "freezeUntil": null,
-  "updatedBy": "按 2026-09 官方/第三方跑分首建;此前档位靠经验挑,本文件是转为可推导的起点",
+  "updatedBy": "2026-11-19 百炼侧由 qwen3.8-max 改为 qwen4-max;Qwen4 的跑分与价格未核实,故留空,只记本机实测",
 
   "dimensions": {
     "knowledge": "知识广度与深度",
@@ -57,22 +57,14 @@
 
     "bailian": {
       "models": {
-        "qwen3.8-max": {
-          "label": "Qwen3.8-Max",
+        "qwen4-max": {
+          "label": "Qwen4-Max",
           "vision": true,
           "contextK": 1024,
-          "scores": {
-            "hard_reasoning": { "v": 43.6, "bench": "HLE", "source": "vendor" },
-            "code_agent": { "v": 67.7, "bench": "SWE-bench Pro", "source": "vendor" },
-            "instruction": { "v": 82.8, "bench": "IFBench", "source": "vendor" },
-            "paper": { "v": 93.0, "bench": "PaperBench", "source": "vendor" },
-            "vision": { "v": 95.2, "bench": "MathVision", "source": "vendor" }
-          },
-          "pricePerM": { "in": 2.0, "out": 6.0, "source": "thirdparty" },
-          "notes": "2.4T MoE(~95B 激活),1M 上下文。0902 快照:QwenSWEBench V2 70.0、CoWorkBench 76.1、JobBench 64.0、BabyVision 93.8、ERQA 78.3、Toolathlon 73.3;TerminalBench 3.0 仅 29.0",
+          "scores": {},
+          "notes": "跑分与价格未核实,故不填(待可靠来源)。上下文 1M 取自 CC Switch 配置 qwen4-max[1M],未实测。2026-11-19 本机实测(均为单次样本):DashScope 兼容接口可用,canary 返回 OK(4.2s);enable_thinking:false 时视觉调用 2.7s、纯红图答「红色」;默认(思考开)文本约 2.2s、reasoning 11 tok;另有一次 think=false 文本调用耗时 11.8s,原因未查明,不排除偶发。",
           "risks": [
-            "AA-Omniscience 实测幻觉率由上代 23% 升至 40%(第三方);代码/agent 类错误会响亮失败故影响小,检索/摘要/数值复算类需人工兜底 —— 已由 recompute/review 提示词硬约束缓解",
-            "AA 实测每任务约 64 轮(上代 14)、输入 token 涨约 15 倍,每任务成本 $0.53 → $1.14"
+            "Qwen4 的幻觉率与每任务成本尚无核实数据;数值复算类任务仍需依靠 recompute/review 提示词的硬约束兜底"
           ]
         }
       }

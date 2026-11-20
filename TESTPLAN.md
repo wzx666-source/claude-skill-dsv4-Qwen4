@@ -106,7 +106,7 @@ node $SK/self_test.mjs
 | # | 测试点 | 命令 | 预期 |
 |---|---|---|---|
 | H1 | 体检:无漂移 | `node $SK/model_audit.mjs` | 退出码 0;"✅ 无漂移";生成物与文档各一行 ✅ |
-| H2 | **推导重现手挑档位** | 同 H1 看表 | `recompute→deepseek-flash`,其余三档 →`deepseek-v4-pro`;Qwen 四档都 `qwen3.8-max`。**若不一致,不是 policy/跑分填错了,就是当初手挑错了** |
+| H2 | **推导重现手挑档位** | 同 H1 看表 | `recompute→deepseek-flash`,其余三档 →`deepseek-v4-pro`;Qwen 四档都 `qwen4-max`。**若不一致,不是 policy/跑分填错了,就是当初手挑错了** |
 | H3 | 跑分表渲染 | `node $SK/model_audit.mjs --render` | markdown 表;DeepSeek 表有"胜方"列,单模型的 Qwen 表**无**该列;分数保留 1 位小数(显示 93.0 而非 93),价格 2 位(0.60 非 0.6) |
 | H4 | 同步幂等 | `node $SK/model_audit.mjs --sync-docs` | 第二次跑报"共 0 处待更新";文件 mtime 不变 |
 | H5 | 标记块独占行 | `grep -n -A1 "ROSTER:bench-tables:begin" $SK/../SKILL.md` | 内容在标记块的**下一行**,不与 `-->` 同行——否则 Markdown 把该行当 HTML 块,表格渲染不出来 |

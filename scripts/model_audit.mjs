@@ -86,7 +86,7 @@ function recommendTiers(roster) {
         pri: m.scores?.[pol.primary]?.v ?? -Infinity,
         sec: m.scores?.[pol.secondary]?.v ?? -Infinity,
       })).filter(c => Number.isFinite(c.pri) || Number.isFinite(c.sec));
-      if (!cands.length) { out[prov][mode] = null; continue; }
+      if (!cands.length) { out[prov][mode] = cur ?? null; continue; }
       cands.sort((a, b) => desc(a.pri, b.pri) || desc(a.sec, b.sec)
         || (a.id === cur ? -1 : b.id === cur ? 1 : 0));
       out[prov][mode] = cands[0].id;

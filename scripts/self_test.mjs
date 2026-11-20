@@ -63,7 +63,7 @@ const expectTiers = [
   ['deepseek', 'challenge', 'deepseek-v4-pro', '知识/推理档 HLE 42.7'],
   ['deepseek', 'recompute', 'deepseek-flash',  'agentic 档 Codeforces 3471'],
   ['deepseek', 'latex',     'deepseek-v4-pro', '知识/推理档'],
-  ['bailian',  'recompute', 'qwen3.8-max',     'Qwen 单一档,不细分'],
+  ['bailian',  'recompute', 'qwen4-max',     'Qwen 单一档,不细分'],
 ];
 for (const [prov, mode, want, why] of expectTiers) {
   const got = pickModel(prov, { mode });
@@ -72,14 +72,14 @@ for (const [prov, mode, want, why] of expectTiers) {
 const pImgD = pickModel('deepseek', { hasImages: true, mode: 'review' });
 check('档位:DeepSeek 含图 → flash(仅它有原生视觉)', pImgD === 'deepseek-flash', pImgD);
 const qImg = pickModel('bailian', { hasImages: true });
-check('档位:Qwen 含图 → qwen3.8-max', qImg === 'qwen3.8-max', qImg);
+check('档位:Qwen 含图 → qwen4-max', qImg === 'qwen4-max', qImg);
 const pNoMode = pickModel('deepseek', {});
 check('档位:不传 mode → 回落 textModel', pNoMode === 'deepseek-v4-pro', pNoMode);
 
 // 7. reviewerMeta 端到端(含图/不含图两种消息)
 const msgText = [{ role: 'user', content: '纯文本' }];
 const metaText = withDriver('deepseek', () => reviewerMeta(msgText, { mode: 'review' }));
-check('评审元信息(DeepSeek 驱动 + review → Qwen)', metaText.name === 'bailian' && metaText.model === 'qwen3.8-max',
+check('评审元信息(DeepSeek 驱动 + review → Qwen)', metaText.name === 'bailian' && metaText.model === 'qwen4-max',
   `${metaText.label} / ${metaText.model}`);
 const metaRe = withDriver('bailian', () => reviewerMeta(msgText, { mode: 'recompute' }));
 check('评审元信息(Qwen 驱动 + recompute → DeepSeek flash 档)',

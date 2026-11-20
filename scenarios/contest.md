@@ -52,7 +52,7 @@ node $S/qwen_review.mjs challenge paper.tex --context "数学建模竞赛论文,
 ## ⚠️ AI 使用声明一致性(提交前必查)
 
 - 合规细节以 `mathmodel-skill/references/2026_ai_regulation.md` 为准;固定交付物是 **《AI工具使用详情.pdf》**,**声明内容必须与详情一致**
-- **如实列**:本 skill 用到的是**两家** —— 读图固定走 Qwen(百炼 qwen3.8-max);评审/咨询走「非驱动方」的厂商,DeepSeek 侧还按 mode 分档
+- **如实列**:本 skill 用到的是**两家** —— 读图固定走 Qwen(百炼 qwen4-max);评审/咨询走「非驱动方」的厂商,DeepSeek 侧还按 mode 分档
 - ⚠️ 若某次由 DeepSeek 原生视觉读了图(hook fail-open 放行,或手动 `Read`),声明里就不能只写 Qwen
 - stage 5 起累积的 `cwd/state/ai_usage_log.md` 是声明的事实来源,别等交稿再回忆
 

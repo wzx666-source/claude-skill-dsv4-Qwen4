@@ -8,6 +8,8 @@
 S=~/.claude/skills/qwen-dual-model/scripts      # Windows: /c/Users/<你>/.claude/skills/qwen-dual-model/scripts
 ```
 
+> ⚠️ **前提**:本 skill 只在 **DeepSeek 驱动**的会话中启用。Qwen/百炼、Claude、GPT 会话里默认不启用,也不自动调用脚本;需要时由你**明确点名**。
+
 ---
 
 ## 一、90% 的情况:按剧本走,不用记命令
@@ -180,7 +182,7 @@ node $S/pdf_read.mjs 论文.pdf --no-images
 驱动方是百炼时,hook **一律放行**(避免"Qwen 读图还得再调一次 Qwen"这个绕圈)。
 所以 Qwen 会话里读图就是直接 `Read` —— **这是设计如此,不是故障**。
 
-但要在 Qwen 会话里拿第二意见,还是得手动敲,只是评审方会自动翻到 DeepSeek:
+但要在 Qwen 会话里拿第二意见,还是得手动敲(这正是「启用条件」里的唯一例外),只是评审方会自动翻到 DeepSeek:
 
 ```bash
 node $S/qwen_review.mjs review src/cache.py   # 本次由 DeepSeek 评审
@@ -316,7 +318,7 @@ cat ~/.claude/hooks-logs/$(date +%F).jsonl
 <!-- ROSTER:mode-tiers:begin -->
 | 你的会话跑在 | 评审/咨询方 | 用的档 |
 |---|---|---|
-| DeepSeek | Qwen(百炼) | `qwen3.8-max`(4 个 mode 同一档) |
+| DeepSeek | Qwen(百炼) | `qwen4-max`(4 个 mode 同一档) |
 | Qwen(百炼) | DeepSeek | `review`/`challenge`/`latex` → `deepseek-v4-pro`;`recompute` → `deepseek-flash` |
 <!-- ROSTER:mode-tiers:end -->
 
@@ -328,6 +330,7 @@ cat ~/.claude/hooks-logs/$(date +%F).jsonl
 **咨询(`qwen_ask`)不按 mode 分档**:它恒用该厂商的 textModel(DeepSeek 侧即 `deepseek-v4-pro`);上表的分档只对 `qwen_review` 的四个 mode 生效。
 
 **为什么重要**:如果你双开了 Qwen 会话,原来的 `qwen_review` 等于让 Qwen 审自己写的东西——"独立评审"名存实亡。翻转后,无论哪边当主模型,拿到的都是**真第二意见**。
+(翻转是脚本层能力;按文首「启用条件」,Qwen/百炼会话默认不启用本 skill,只有你明确点名手动调用脚本时才会走到这里。)
 
 评审方会打印在 **stderr**,`stdout` 首行仍是「总体结论:…」,落盘/解析脚本不受影响。
 
@@ -344,6 +347,8 @@ cat ~/.claude/hooks-logs/$(date +%F).jsonl
 ```markdown
 ## 双模型会话路由
 
+- **本 skill 只在 DeepSeek 驱动的会话中启用。** Qwen/百炼、Claude、GPT 会话不要激活,也不要自动调用脚本;
+  需要时由你**明确点名**。
 - **默认开 DeepSeek 会话。** 只在以下**两种情况**开 Qwen 会话(CC Switch 切百炼 + 新终端):
   ① 核心工作是连续多轮的视觉/PDF 精读;② 开题就知道要连续多轮啃的硬骨头。
   (纯前端长程项目按 skill `model-switch` 的判据**切 Claude**,不开 Qwen 会话。)

@@ -37,20 +37,20 @@ export const TIMEOUTS = {
  *     Flash 赢代码/agent: DeepSWE 74.2 vs 62.7、Codeforces 3471 vs 3348、Terminal-Bench 3.0 30.0 vs 11.8
  *     Pro   赢知识/推理: GPQA 92.4 vs 90.9、HLE 42.7 vs 36.8
  *   故按 mode 分档,而不是"纯文本一律 pro"。仅 Flash 有原生视觉(ViT)。
- *   Qwen3.8-Max 是单一档位,四个 mode 同模型(视觉 MathVision 95.2 仍压过 Flash 的 BabyVision 89.6)。
+ *   Qwen4-Max 是单一档位,四个 mode 同模型(2026-11-19 实测:enable_thinking 字段有效,视觉 think=false 2.7s)。
  */
 export const PROVIDERS = {
   bailian: {
     id: 'e303406a-b8e2-477f-b367-88d5aa1bb64b',
     label: 'Qwen(百炼)',
     endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    textModel: 'qwen3.8-max',
-    visionModel: 'qwen3.8-max',
+    textModel: 'qwen4-max',
+    visionModel: 'qwen4-max',
     modeModels: {
-      review: 'qwen3.8-max',      // PaperBench 93.0 / IFBench 82.8
-      challenge: 'qwen3.8-max',
-      recompute: 'qwen3.8-max',
-      latex: 'qwen3.8-max',
+      review: 'qwen4-max',
+      challenge: 'qwen4-max',
+      recompute: 'qwen4-max',
+      latex: 'qwen4-max',
     },
     envModel: 'QWEN_MODEL',
     envKey: 'QWEN_API_KEY',
@@ -244,6 +244,36 @@ export function peerProviderName() {
   return activeProviderName() === 'bailian' ? 'deepseek' : 'bailian';
 }
 
+/**
+ * 明确识别出的驱动方:返回 'bailian' | 'deepseek' | null。
+ * null 表示当前会话不是 DeepSeek 也不是 Qwen/百炼(如 Claude / GPT 会话),
+ * 此时本 skill 不应生效 —— 与 activeProviderName() 的"识别失败默认 DeepSeek"语义不同,
+ * 专供钩子做硬性拦截用:Claude / GPT 会话不会因为兜底而触发钩子。
+ */
+export function resolvedDriverName() {
+  if (process.env.DRIVER_PROVIDER) {
+    return PROVIDERS[process.env.DRIVER_PROVIDER] ? process.env.DRIVER_PROVIDER : null;
+  }
+  try {
+    const s = JSON.parse(fs.readFileSync(path.join(CC_DIR, 'settings.json'), 'utf8'));
+    for (const [name, p] of Object.entries(PROVIDERS)) {
+      if (p.id === s.currentProviderClaude) return name;
+    }
+    if (s.currentProviderClaude) return null; // 读到了,但不是本 skill 认识的 provider
+  } catch {}
+  try {
+    const db = new DatabaseSync(CC_SWITCH_DB, { readOnly: true });
+    const row = db.prepare("SELECT id FROM providers WHERE app_type = 'claude' AND is_current = 1").get();
+    if (row) {
+      for (const [name, p] of Object.entries(PROVIDERS)) {
+        if (p.id === row.id) return name;
+      }
+      return null; // DB 有当前 provider,但不是本 skill 认识的
+    }
+  } catch {}
+  return null; // 读不到任何信息 → 保守处理,不激活
+}
+
 /** 已知的纯文本档(依据 model_roster.json 的 vision 字段:DeepSeek 侧只有 flash 有原生视觉) */
 const TEXT_ONLY_MODELS = ['deepseek-v4-pro'];
 
@@ -314,9 +344,10 @@ const STREAM_USAGE_UNSUPPORTED = new Set();
 
 /**
  * 不支持 enable_thinking 的 provider(思考模式开关的降级开关)。
- * 2026-10-30 实测:qwen3.8-max 在默认(思考开)下,视觉调用会生成
- * 3000–9500 个 reasoning token,单次 60–240s;显式 enable_thinking:false 后
- * 同一张图 2.1s、2 个 token 返回,质量无损。故视觉通道默认关闭思考。
+ * 2026-10-30 实测 qwen3.8-max:默认(思考开)视觉 3000–9500 reasoning tok,单次 60–240s;
+ *   enable_thinking:false 后同一张图 2.1s、质量无损。
+ * 2026-11-19 实测 qwen4-max:enable_thinking:false 视觉 2.7s;默认(思考开)文本 2.2s、reasoning=11 tok。
+ *   qwen4-max 思考开销远低于 qwen3.8-max,但视觉仍默认关思考(enable_thinking 字段已确认生效)。
  * 若某网关不认这个字段(400/422 unknown parameter),记下来并重试,不消耗重试次数。
  */
 const THINKING_UNSUPPORTED = new Set();

@@ -1,6 +1,9 @@
 # 双模型协议(DeepSeek 主线 + Qwen 视觉/评审外挂)
 
-本项目启用双模型协作:主会话跑 **DeepSeek**,Qwen(百炼 qwen3.8-max)提供**视觉**与**独立评审**两个外挂能力。
+本项目启用双模型协作:主会话跑 **DeepSeek**,Qwen(百炼 qwen4-max)提供**视觉**与**独立评审**两个外挂能力。
+
+> ⚠️ **启用条件**:本协议只在 **DeepSeek 或 Qwen/百炼驱动**的会话中启用。Claude、GPT 会话不要激活,
+> 也不要自动调用 `qwen_vision` / `qwen_review` / `qwen_ask`;需要时由用户明确点名。
 
 ## 会话路由(开哪种会话)
 
@@ -9,7 +12,7 @@
    (纯前端长程项目按 skill `model-switch` 的判据**切 Claude**,不开 Qwen 会话。)
 3. **中途遇到难题 → 不切会话**(切会话会丢掉已建立的上下文)。改用 `qwen_ask` 会诊 / `qwen_review challenge` 对抗——**两个模型都要,比切过去只用一个更强**。
 4. **误判触发器**:同一 bug 修 2 轮不过 / 算法题卡 20 分钟 / 读 3 个文件还没定位 → 送 `qwen_ask`;
-   Qwen 会话里连续两次评审都是"改个参数就行" → 回 DeepSeek。
+   Qwen 会话里(手动点名跑评审时)连续两次都是"改个参数就行" → 回 DeepSeek。
 
 ## 视觉协议(读图走 Qwen)
 
@@ -27,7 +30,7 @@ node C:/Users/王子轩/.claude/skills/qwen-dual-model/scripts/qwen_vision.mjs <
 node C:/Users/王子轩/.claude/skills/qwen-dual-model/scripts/qwen_review.mjs <mode> <文件...> [--focus "..."] [--context "..."]
 ```
 
-**评审方自动 = 非驱动方的那个厂商**,无需手动指定:本会话跑 DeepSeek 时评审走 Qwen;双开的 Qwen 会话里评审自动走 DeepSeek。这样"独立评审"始终是真第二意见,不会退化成自己审自己。评审方打印在 stderr,stdout 首行仍是「总体结论:…」。
+**评审方自动 = 非驱动方的那个厂商**,无需手动指定:本会话跑 DeepSeek 时评审走 Qwen。双开的 Qwen 会话默认不启用本协议;只有用户明确点名手动调用脚本时,翻转才会把评审方落到 DeepSeek。这样"独立评审"始终是真第二意见,不会退化成自己审自己。评审方打印在 stderr,stdout 首行仍是「总体结论:…」。
 
 | mode | 时机 |
 |---|---|
@@ -52,7 +55,7 @@ node C:/Users/王子轩/.claude/skills/qwen-dual-model/scripts/qwen_review.mjs <
 - **`latex` 是编译的补充不是替代**:语法错误交给 `xelatex` 实际编译(编译器零幻觉),模型只判数学正确性与符号一致性
 
 <!-- ROSTER:roster-stamp:begin -->
-> 档位依据:`model_roster.json` @ 2026-09-28(复核期限 2026-10-31)。若此戳早于 skill 内的 roster 版本,说明本项目这份协议已过期,请重新拷贝模板。
+> 档位依据:`model_roster.json` @ 2026-11-19(复核期限 2026-12-31)。若此戳早于 skill 内的 roster 版本,说明本项目这份协议已过期,请重新拷贝模板。
 <!-- ROSTER:roster-stamp:end -->
 
 - **`--context "<领域背景>"`**:不给按通用标准评审;给了按该领域规范判(如 `--context "Rust 异步运行时,关注 Send/Sync 边界"`)

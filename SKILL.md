@@ -1,12 +1,39 @@
 ---
 name: qwen-dual-model
-description: DeepSeek 主会话的双模型外挂——Qwen 管视觉(读图/PDF),评审与第二意见自动落到非驱动方的另一厂商(跨厂商真第二意见、一次调用,区别于 agent-review-panel 的多智能体深审);评审按 mode 分档(代码/agent 走 flash,知识推理走 pro)。任务剧本在 scenarios/ 下:作业复核、答辩 PPT 终稿检查、数模竞赛插图与数值复核、论文插图与终稿评审。会话路由:默认 DeepSeek,只在连续多轮视觉精读/开题即知的硬骨头时开 Qwen 会话,中途难题不切会话。触发词——看图、读图、识图、检查图、这张图、手写公式、第二意见、双模型、用 Qwen、视觉;评审、评审一下、challenge、对抗评审、复算、复核数值、LaTeX 检查、开哪个会话、答辩 PPT 排版检查、竞赛插图复核、论文插图复核;模型升级、换模型、跑分更新、重新分档、迭代通道、新模型、model_roster。要判断该不该切到第三/第四家(Claude / GPT)→ 用 skill model-switch。
+description: 【启用条件:仅当当前会话由 DeepSeek 或 Qwen/百炼驱动时启用;Claude、GPT 会话一律不激活本 skill,也不自动调用其脚本。】双模型外挂——Qwen 管视觉(读图/PDF),评审与第二意见自动落到非驱动方的另一厂商(跨厂商真第二意见、一次调用,区别于 agent-review-panel 的多智能体深审);评审按 mode 分档(代码/agent 走 flash,知识推理走 pro)。任务剧本在 scenarios/ 下:作业复核、答辩 PPT 终稿检查、数模竞赛插图与数值复核、论文插图与终稿评审。会话路由:默认 DeepSeek,只在连续多轮视觉精读/开题即知的硬骨头时开 Qwen 会话,中途难题不切会话。触发词——看图、读图、识图、检查图、这张图、手写公式、第二意见、双模型、用 Qwen、视觉;评审、评审一下、challenge、对抗评审、复算、复核数值、LaTeX 检查、开哪个会话、答辩 PPT 排版检查、竞赛插图复核、论文插图复核;模型升级、换模型、跑分更新、重新分档、迭代通道、新模型、model_roster。要判断该不该切到第三/第四家(Claude / GPT)→ 用 skill model-switch。
 allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 ---
 
 # qwen-dual-model — 双模型协作(视觉 + 跨厂商第二意见)
 
-主会话跑在 **DeepSeek** 上;Qwen(百炼 qwen3.8-max)提供两个外挂能力:**视觉**与**独立评审**。**主链路直连不动,外挂失败不影响主线**——这是与代理式路由(如 CCR)的本质区别。
+## 启用条件(硬规则:只在 DeepSeek 或 Qwen/百炼驱动时启动)
+
+**当前会话的主模型既不是 DeepSeek 也不是 Qwen/百炼 → 不启动本 skill。** 不是"少用一点",是整份 skill 不启用、`scripts/` 下的脚本一个都不自动调。
+
+| 会话驱动方 | 本 skill | 怎么办 |
+|---|---|---|
+| **DeepSeek**(默认) | ✅ 启动 | 按下面的分工表与 `scenarios/` 走;视觉走 Qwen,评审/咨询翻转给 Qwen |
+| **Qwen / 百炼** | ✅ 启动 | 同上分工;视觉由本会话自己读(不绕回 Qwen),评审/咨询翻转给 DeepSeek |
+| Claude / GPT | ⛔ 不启动 | 整份 skill 不启用;跨厂商判断走 skill `model-switch` |
+
+- **怎么判**:以会话 system prompt 里 "You are powered by the model …" 那行的**模型名**为准(别把客户端名 "Claude Code" 当成模型名)——
+  模型名含 `deepseek` 或 `qwen` / `百炼` 才启用;含 `claude` / `gpt` 一律不启用。
+  脚本层的同一信号是 CC Switch `settings.json → currentProviderClaude`(见「评审角色翻转」),
+  由 `resolvedDriverName()` 判定:`DRIVER_PROVIDER=bailian|deepseek` 可强制覆盖,识别不出(Claude / GPT / 读取失败)返回 null → 不启用。
+- **为什么 Claude / GPT 不启用**:本 skill 的两条能力都以"驱动方是 DeepSeek 或 Qwen"为前提 ——
+  视觉固定走 Qwen、评审翻转给非驱动方。驱动方是 Claude 或 GPT 时,再把图送给 Qwen 只会白花钱,
+  而且主模型自己就能看图;评审也会退化成让第三家去评一个它没参与的任务。
+- **Qwen 驱动时视觉不绕圈**:驱动方已是 Qwen,原生 Read 直接读图;`qwen_read_hook.mjs` 检测到
+  `driver-is-qwen` 即整体让行,不会再调一次 Qwen。
+- **唯一例外**:用户在该会话里**明确点名**要跑 `qwen_vision` / `qwen_review` / `qwen_ask` 等脚本。
+  那是用户手动调用,不算本 skill 自动启动;没点名就不启用。
+
+> **钩子的硬拦截**:`qwen_read_hook.mjs` 用 `resolvedDriverName()` 而不是 `activeProviderName()`。
+> 后者识别失败时兜底成 DeepSeek(为了评审翻转不退化),会让 Claude / GPT 会话也被拦图 ——
+> 那是旧行为,现已修正:识别不出驱动方一律放行,不做任何 Qwen 调用。
+
+主会话默认跑在 **DeepSeek** 上;Qwen(百炼 qwen4-max)提供两个外挂能力:**视觉**与**独立评审**。
+开 Qwen 会话时两者对调:视觉由 Qwen 自己读,评审翻转给 DeepSeek。**主链路直连不动,外挂失败不影响主线**——这是与代理式路由(如 CCR)的本质区别。
 
 ## 用户现在在做什么?(先看这张表)
 
@@ -71,17 +98,11 @@ allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 
 ### Qwen(百炼)(单一候选,档位无需推导)
 
-| 维度(基准) | Qwen3.8-Max |
+| 维度(基准) | Qwen4-Max |
 |---|---|
-| 长尾硬推理 (HLE) | 43.6 |
-| agent/仓库级编码 (SWE-bench Pro) | 67.7 |
-| 指令遵循/格式 (IFBench) | 82.8 |
-| 论文级复现与评审 (PaperBench) | 93.0 |
-| 视觉 (MathVision) | 95.2 |
-| 输出价 $/M | 6.00 |
 
 > 数据来源:vendor=厂商自报(无独立复现)。
-> **复核期限 2026-10-31** —— 到期跑 `node scripts/model_audit.mjs` 并按 `MODEL_UPGRADE.md` 重分档。
+> **复核期限 2026-12-31** —— 到期跑 `node scripts/model_audit.mjs` 并按 `MODEL_UPGRADE.md` 重分档。
 <!-- ROSTER:bench-tables:end -->
 
 → **结论**:代码/agent 走 Flash,知识/推理走 Pro。故 `recompute` 落 Flash,`review`/`challenge`/`latex` 落 Pro。
@@ -188,16 +209,19 @@ node $SK/self_test.mjs                         # 5. 全 ✅ 才算完成
 > 与双模型直接相关的两条:**`qwen_ask` 两轮后仍给不出可行思路 → 该切 Claude**(那是能力问题,不是多样性问题);
 > **生图/改图用 GPT —— 但 GPT 生成的图仍要回来走 `qwen_vision` 复核**(别因为"是 GPT 做的"就跳过)。
 
-**在 Claude 会话里跑本 skill 的注意事项**:评审翻转只认 `deepseek` / `bailian` 两家,
+**在非 DeepSeek 会话里手动调用脚本时(仅限用户明确点名)**:评审翻转只认 `deepseek` / `bailian` 两家,
 识别不到时**按 DeepSeek 驱动处理** → 评审方落到 Qwen。那种场合的第二意见要手动指定。
 
 ## 评审角色翻转
 
 **评审方 = 非驱动方的那个厂商**,脚本自动判定,无需手动指定。**翻转只决定"哪家厂商",`mode` 决定"该厂商的哪一档"**:
 
+> ⚠️ 本表是**脚本层**能力,不改变上面的「启用条件」硬规则:Qwen 驱动会话默认不启用本 skill;
+> 只有用户明确点名手动调用脚本时才会用到这张表。
+
 | 驱动会话 | 评审/咨询方 | 用的档 |
 |---|---|---|
-| DeepSeek | Qwen(百炼) | `qwen3.8-max`(四个 mode 同一档) |
+| DeepSeek | Qwen(百炼) | `qwen4-max`(四个 mode 同一档) |
 | Qwen(百炼) | DeepSeek | **按 mode 分档**(见下表);**含图一律落 `deepseek-flash`** |
 
 mode 分档(两家的档位都由 `model_roster.json` 推导,别手改):
@@ -205,12 +229,12 @@ mode 分档(两家的档位都由 `model_roster.json` 推导,别手改):
 <!-- ROSTER:mode-tiers:begin -->
 | mode | 档位(DeepSeek / Qwen) | 主维度 → 副维度 |
 |---|---|---|
-| `review` | `deepseek-v4-pro` / `qwen3.8-max` | hard_reasoning → knowledge |
-| `challenge` | `deepseek-v4-pro` / `qwen3.8-max` | hard_reasoning → knowledge |
-| `recompute` | `deepseek-flash` / `qwen3.8-max` | algo → code_agent |
-| `latex` | `deepseek-v4-pro` / `qwen3.8-max` | knowledge → instruction |
+| `review` | `deepseek-v4-pro` / `qwen4-max` | hard_reasoning → knowledge |
+| `challenge` | `deepseek-v4-pro` / `qwen4-max` | hard_reasoning → knowledge |
+| `recompute` | `deepseek-flash` / `qwen4-max` | algo → code_agent |
+| `latex` | `deepseek-v4-pro` / `qwen4-max` | knowledge → instruction |
 
-> 由 `model_roster.json` 推导(roster@2026-09-28,复核期限 2026-10-31)。改档位请走 `MODEL_UPGRADE.md` 的流程,不要直接编辑本表。
+> 由 `model_roster.json` 推导(roster@2026-11-19,复核期限 2026-12-31)。改档位请走 `MODEL_UPGRADE.md` 的流程,不要直接编辑本表。
 <!-- ROSTER:mode-tiers:end -->
 
 - **任意 mode + 含图 → `deepseek-flash`**:这是硬约束(仅 Flash 有原生视觉 ViT),不参与维度推导
@@ -218,7 +242,7 @@ mode 分档(两家的档位都由 `model_roster.json` 推导,别手改):
 
 - 判定依据:CC Switch 的 `settings.json → currentProviderClaude`(数据库 `is_current` 兜底);识别失败按 DeepSeek 驱动处理
 - 可用环境变量 `DRIVER_PROVIDER=bailian|deepseek` 强制覆盖(测试用)
-- 判定依据是"当前驱动方",所以**双开 Qwen 会话时不会退化成 Qwen 审自己**——无论哪边当主模型,拿到的都是真第二意见
+- 判定依据是"当前驱动方",所以**脚本被手动调用时不会退化成 Qwen 审自己**——无论哪边当主模型,拿到的都是真第二意见
 - 评审方信息打印在 **stderr**,`stdout` 首行仍是「总体结论:…」,落盘/解析脚本不受影响
 
 ## 脚本用法(scripts/)
@@ -364,7 +388,7 @@ node <skill>/scripts/show_calls.mjs --cost     # 按 厂商/模型 汇总 token 
 5. 让它把结果存到 bridge/to_ds/<名字>.md
 6. 回本会话说「读 bridge/to_ds/<名字>.md」,我接着干
 ```
-> 翻转后,该 Qwen 会话里的 `qwen_review` 会自动改由 DeepSeek 评审;主会话这边则仍由 Qwen 评审。
+> 按「启用条件」,Qwen 会话默认不启用本 skill;若你**明确点名**手动跑 `qwen_review`,评审方会自动改由 DeepSeek 承担。主会话这边仍由 Qwen 评审。
 > **不要为了"随手问一句"开 Qwen 会话**——单次提问用 `qwen_ask`。
 
 ## 成本与轮次(决定"值不值得开 Qwen 会话")

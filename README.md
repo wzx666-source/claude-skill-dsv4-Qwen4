@@ -1,7 +1,10 @@
 # qwen-dual-model — DeepSeek 主线 + Qwen 视觉/评审双模型联动
 
-> 给你(和 Claude)配一套**双模型协作**:主会话跑 DeepSeek,Qwen(百炼 qwen3.8-max)补上**视觉**(读图/PDF)与**跨厂商独立评审**两块短板。
+> 给你(和 Claude)配一套**双模型协作**:主会话跑 DeepSeek,Qwen(百炼 qwen4-max)补上**视觉**(读图/PDF)与**跨厂商独立评审**两块短板。
 > 主链路零改动、无代理、无常驻进程 —— 外挂挂了只影响"读图/评审"这一件事,主线推理不受任何影响。
+
+> ⚠️ **启用条件(硬规则)**:本 skill **只在 DeepSeek 或 Qwen/百炼驱动的会话中启用**。当前会话跑的是 Claude 或 GPT 时,
+> 不要激活本 skill,也不要自动调用 `scripts/` 下的脚本;只有你**明确点名**某个脚本时才手动执行。判据与例外见 [`SKILL.md`](SKILL.md) 的「启用条件」。
 
 ## 我在做什么?(从这里开始)
 
@@ -99,7 +102,7 @@ node ~/.claude/skills/qwen-dual-model/scripts/self_test.mjs
 <!-- ROSTER:mode-tiers:begin -->
 | 你的会话跑在 | 评审/咨询方 | 用的档 |
 |---|---|---|
-| DeepSeek | Qwen(百炼) | `qwen3.8-max`(4 个 mode 同一档) |
+| DeepSeek | Qwen(百炼) | `qwen4-max`(4 个 mode 同一档) |
 | Qwen(百炼) | DeepSeek | `review`/`challenge`/`latex` → `deepseek-v4-pro`;`recompute` → `deepseek-flash` |
 <!-- ROSTER:mode-tiers:end -->
 
@@ -109,6 +112,7 @@ node ~/.claude/skills/qwen-dual-model/scripts/self_test.mjs
 - 判定依据:CC Switch 的 `settings.json → currentProviderClaude`(数据库 `is_current` 兜底);`DRIVER_PROVIDER` 环境变量可强制覆盖
 
 **为什么重要**:双开 Qwen 会话时,如果评审还走 Qwen,就成了自己审自己,"独立评审"直接失效。翻转后无论哪边当主模型,拿到的都是真第二意见。
+(翻转是脚本层能力;按上面的「启用条件」,Qwen/百炼会话默认不启用本 skill,只有你明确点名手动调用脚本时才会走到这里。)
 
 ### 3. 会话路由
 
@@ -154,7 +158,7 @@ node ~/.claude/skills/qwen-dual-model/scripts/self_test.mjs
 - **Claude Code**(任意版本,支持 hooks)
 - **Node.js ≥ 22.5**(内置 `fetch` 与 `node:sqlite`,零 npm 依赖)
 - **CC Switch**(GUI 管理 provider;脚本自动从它的数据库读两家 API key,与 CC Switch 配置保持同步,**key 不落盘、不进仓库**)
-- **百炼(Bailian)API key**:开通 qwen3.8-max(实测支持视觉)
+- **百炼(Bailian)API key**:开通 qwen4-max(实测支持视觉)
 - **DeepSeek API key**(仅当你要在 Qwen 会话里用评审翻转时;脚本从 CC Switch 读)
 - Python + `pdfplumber` + `pypdfium2`(仅 PDF 功能需要:`pip install pdfplumber pypdfium2`)
 

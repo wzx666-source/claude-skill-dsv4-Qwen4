@@ -14,7 +14,7 @@
 //   - 每次路由写入 hooks-logs,可事后排查
 import path from 'node:path';
 import fs from 'node:fs';
-import { callQwen, imageBlock, IMAGE_EXTS, activeProviderName, driverVisionCapable, TIMEOUTS, visionCacheGet, visionCacheSet } from './qwen_common.mjs';
+import { callQwen, imageBlock, IMAGE_EXTS, resolvedDriverName, driverVisionCapable, TIMEOUTS, visionCacheGet, visionCacheSet } from './qwen_common.mjs';
 
 // hook 专用精简 prompt —— 与手动 qwen_vision.mjs 的完整版分开:
 // 旧 prompt 要求"图表结构、坐标轴、数据趋势、异常点、公式",对幻灯片大半是空话("无坐标轴"),
@@ -80,9 +80,18 @@ async function main() {
   if (!fs.existsSync(abs)) return console.log('{}'); // 文件不存在时放行,让 Read 正常报错
   const ext = path.extname(abs).toLowerCase().slice(1);
 
+  // 硬性启用条件:只在 DeepSeek 或 Qwen(百炼)驱动的会话中生效。
+  // resolvedDriverName() 返回 null 表示当前驱动方是本 skill 不认识的 provider(Claude / GPT 等),
+  // 直接整体让行 —— 不能靠 activeProviderName() 的"识别失败兜底 DeepSeek",否则 Claude / GPT 会话
+  // 也会被拦下来转给 Qwen:既误花 Qwen 的钱,也让主模型拿到不属于本次会话的视觉摘要。
+  const resolvedDriver = resolvedDriverName();
+  if (resolvedDriver === null) {
+    log({ level: 'PASSTHROUGH', kind: 'driver-not-skill-provider', target: abs });
+    return console.log('{}');
+  }
   // 驱动方是 Qwen 时整体让行:协议里"扫描件/图密集 PDF 就在 Qwen 会话里直接 Read"依赖这条路,
   // 此处再拦截会拦掉自己的工作流(Qwen 读图还得再调一次 Qwen,纯属绕圈)
-  if (activeProviderName() === 'bailian') {
+  if (resolvedDriver === 'bailian') {
     log({ level: 'PASSTHROUGH', kind: 'driver-is-qwen', target: abs });
     return console.log('{}');
   }
